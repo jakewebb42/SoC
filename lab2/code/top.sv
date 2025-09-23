@@ -22,41 +22,54 @@
 
 module top(
     input logic CLK100MHZ,
-    input logic BTNL, BTNC, BTNR,
     
     output logic [15:0] LED,
-    output logic [3:0] AN,
+    output logic [7:0] AN,
     output logic CA, CB, CC, CD, CE, CF, CG
-    );
+    ); 
     
     // Counter
     logic tick;
-    logic en= 1'b1;
-    
-    counter(
+    logic en;
+    assign en=1'b1;
+    counter ct(
       .clk(CLK100MHZ),
       .en(en),
+      
+      .tick(tick)
+    );
     
-      .tick(tick)    
+    // SSEG Controller
+    logic [3:0] hex_out;
+    logic [2:0] anode_index;
+    logic [15:0] hex_in;
+    assign hex_in = 16'hf123;
+    
+    sseg_controller sc(
+      .clk(CLK100MHZ),
+      .en(tick),
+      .hex_in(hex_in),
+      
+      .anode_index(anode_index),
+      .hex_out(hex_out)
     );
     
     // Hex to SSEG
-    logic [6:0] sseg;
-    hex_to_sseg(
-      .hex(hex),
+    logic [6:0] sseg;   
+    hex_to_sseg hts(
+      .hex(hex_out),
       
-     .sseg(sseg) 
+     .sseg(sseg)
     );
     
     // Board
     logic is_led_on;
-    assign is_led_on = 1'b1;    
-    
+    assign is_led_on = 1'b1;
+  
     board dut(
-      .clk(tick),
-      .BTNL(BTNL), .BTNC(BTNC), .BTNR(BTNR), // temporary
-      .sseg(sseg),
+      .clk(CLK100MHZ),
       .is_led_on(is_led_on),
+      .sseg(sseg),
       .anode_index(anode_index),
     
       .LED(LED),
